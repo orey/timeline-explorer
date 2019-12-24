@@ -34,7 +34,17 @@
 
 (defun explore-and-collect (dir acc)
   (if (null acc)
-      (multiple-value-bind (filter (directory dir))
+      (multiple-value-bind (dirs acc)
+                           (filter (directory dir))
+                           (dolist (d dirs)
+                             (explore-and-collect d acc)))
+      (multiple-value-bind (dirs files)
+                           (filter (directory dir))
+                           (progn
+                             (setf acc (append acc files))
+                             (dolist (d dirs)
+                               (explore-and-collect d acc))))))
+                           
 
  
 
