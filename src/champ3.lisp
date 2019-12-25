@@ -3,48 +3,44 @@
 ; Copyleft Olivier Rey 2019-2020
 ;=======================================================================
 
-(defparameter DIR-WC  "*/" "Wild card default for directories. Could be implementation specific")
-(defparameter FILE-WC "*" "Wild card default for files.")
-
 (defparameter LAST-DIR-CHAR "/")
-
-;(defun list-files (dir)
-; (directory (concatenate
+(defparameter PATTERN "*.*")
 
 (defun last-char (str)
-  "Get the last char"
+  "Get the last char of a string"
   (subseq str (- (length str) 1)))
 
 (defun folder-p (str)
-  "Check the last char of the str passed and return true if it is /"
+  "Check the last char of the str passed and return true if it is /
+   Used for folders as namestrings"
   (if (string-equal (last-char str) LAST-DIR-CHAR) T NIL))
 
-(defun filter-files (lst)
-  "lst is a list of pathnames and not string, typically our from directory"
-  (remove-if 'folder-p (mapcar 'namestring lst)))
+(defun files-in-dir (dir)
+  "dir is a string"
+  (remove-if 'folder-p (mapcar 'namestring (directory (concatenate 'string dir PATTERN)))))
 
-(defun filter-folders (lst)
-  "lst is a list of pathnames and not string, typically our from directory"
-  (remove-if-not 'folder-p (mapcar 'namestring lst)))
+(defun dirs-in-dir (dir)
+  "dir is a string"
+  (remove-if-not 'folder-p (mapcar 'namestring (directory (concatenate 'string dir PATTERN)))))
 
-(defun filter (lst)
-  "lst is a list of pathnames and not string, typically our from directory"
-  (values (remove-if-not 'folder-p (mapcar 'namestring lst))
-          (remove-if     'folder-p (mapcar 'namestring lst))))
+(defvar acc '())
 
-(defun explore-and-collect (dir acc)
-  (if (null acc)
-      (multiple-value-bind (dirs acc)
-                           (filter (directory dir))
-                           (dolist (d dirs)
-                             (explore-and-collect d acc)))
-      (multiple-value-bind (dirs files)
-                           (filter (directory dir))
-                           (progn
-                             (setf acc (append acc files))
-                             (dolist (d dirs)
-                               (explore-and-collect d acc))))))
-                           
+(defun find-files (dir)
+  (setf acc (concatenate 'list acc (files-in-dir dir)))
+  (dolist (d (dirs-in-dir dir))
+    (find-files d)))
 
- 
+(defvar mymap (make-hash-table))
 
+(defun record-date-in-map (f)
+  (with-open-file (s f)
+                  (setf (gethash (file-write-date s) mymap) f)))
+
+
+(defun find-all-files (dir)
+  (find-files dir)
+  (print acc)
+  (print (length acc))
+  (dolist (x acc)
+    (record-date-in-map x))
+  (print mymap))
