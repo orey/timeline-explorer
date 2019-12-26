@@ -39,18 +39,9 @@
                             acc1))
               (setf acc (find-files1 acc dir))))))
 
-(defun test1 ()
-  (find-files "/home/olivier/Documents/github/"))
-
-(defun test2 ()
-  (find-files "/home/olivier/Documents/bloub/"))
-
 (defun get-file-seconds (f)
   (with-open-file (s f)
                   (file-write-date s)))
-
-(defun test3 ()
-  (get-file-seconds "/home/olivier/Documents/github/toto.txt"))
 
 (defun build-map (acc)
   (let ((out nil))
@@ -58,16 +49,83 @@
       (setf out (concatenate 'list out (list (cons (get-file-seconds f) (list f))))))
     out))
     
-(defun test4 ()
-  (build-map (find-files "/home/olivier/Documents/github/")))
-
 (defun list> (a b)
   (if (> (car a) (car b)) T nil))
 
+
+(defun format-elem (elem strea)
+  (let ((dt (multiple-value-list (decode-universal-time (car elem))))
+        (pn (car (directory (cadr elem)))))
+    ;(format strea "<p>~d-~d-~d, ~d:~d:~d | <a href=\"~A\" target=\"_new\">~A</a></p>"
+    (format strea "<p>~d-~d-~d, ~2,'0d:~2,'0d:~2,'0d | <a href=\"~A\" target=\"_new\">~A</a></p>"
+            (sixth dt)
+            (fifth dt)
+            (fourth dt)
+            (third dt)
+            (second dt)
+            (first dt)
+            (cadr elem)
+            (concatenate 'string (pathname-name pn) "." (pathname-type pn)))))
+
+(defun format-header (strea)
+  (format strea
+          "<!DOCTYPE html><html lang=\"en\"> \
+<head> \
+<title>Champollion Explorer</title> \
+<meta charset=\"utf-8\"> \
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> \
+<link rel=\"stylesheet\" type=\"text/css\" href=\"styles.css\"> \
+</head> \
+<body> \
+<div class=\"sidenav\"> \
+<a href=\"#\">Link</a> \
+<a href=\"#\">Link</a> \
+<a href=\"#\">Link</a> \
+</div> \
+<div class=\"content\">"))
+
+(defun format-footer (strea)
+  (format strea
+          "</div> \
+</body> \
+</html>"))
+
 (defun generate-page (dir)
   (let ((sorted-list (sort (build-map (find-files dir)) #'list>)))
-    (dolist (elem sorted-list)
-      (print elem))))
+    (with-open-file (strea "index.html" :direction :output
+                           :if-exists :supersede)
+                    (format-header strea)
+                    (dolist (elem sorted-list)
+                      (format-elem elem strea))
+                    (format-footer strea))))
+
+
+;======================================Test programs
+
+(defun test1 ()
+  (find-files "/home/olivier/Documents/github/"))
+
+(defun test2 ()
+  (find-files "/home/olivier/Documents/bloub/"))
+
+(defun test3 ()
+  (get-file-seconds "/home/olivier/Documents/github/toto.txt"))
+
+(defun test4 ()
+  (build-map (find-files "/home/olivier/Documents/github/")))
 
 (defun test5 ()
   (generate-page "/home/olivier/Documents/github/"))
+
+(defun test6 ()
+  (format-header T)
+  (print "------------------")
+  (format-footer T))
+
+(defun test-suite ()
+  (test1)
+  (test2)
+  (test3)
+  (test4)
+  (test5)
+  (test6))
