@@ -141,7 +141,8 @@
                     (format-header strea)
                     (dolist (elem sorted-list)
                       (generate-section elem strea sidebar)
-                      (format-elem elem strea))
+                      (format-elem elem strea)
+                      (princ "+"))
                     (format-sidebar strea)
                     (format strea (get-output-stream-string sidebar))
                     (format-footer strea))))
@@ -162,7 +163,7 @@
   (build-map (find-files "/home/olivier/Documents/github/")))
 
 (defun test5 ()
-  (generate-page "/home/olivier/Documents/github/"))
+  (generate-page "/home/olivier/Documents/OREYBOX/Biblio/"))
 
 (defun test6 ()
   (format-header T)
