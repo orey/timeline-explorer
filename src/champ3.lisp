@@ -57,7 +57,8 @@
   (let ((dt (multiple-value-list (decode-universal-time (car elem))))
         (pn (car (directory (cadr elem)))))
     ;(format strea "<p>~d-~d-~d, ~d:~d:~d | <a href=\"~A\" target=\"_new\">~A</a></p>"
-    (format strea "<p>~d-~d-~d, ~2,'0d:~2,'0d:~2,'0d | <a href=\"~A\" target=\"_new\">~A</a></p>"
+;    (format strea "<p>~d-~d-~d, ~2,'0d:~2,'0d:~2,'0d | <a href=\"~A\" target=\"_new\">~A</a></p>"
+    (format strea "<p>~2,'0d-~2,'0d-~2,'0d - ~2,'0d:~2,'0d:~2,'0d | <a href=\"~A\" target=\"_new\">~A</a></p>"
             (sixth dt)
             (fifth dt)
             (fourth dt)
@@ -66,6 +67,46 @@
             (first dt)
             (cadr elem)
             (concatenate 'string (pathname-name pn) "." (pathname-type pn)))))
+
+(defun format-date (d level strea sidebar)
+  (cond ((eql level 1) ; change of year
+         (progn
+           (format strea "<a name=\"~d\" /><h1>Year ~2,'0d</h1>" (car d) (car d))
+           (format strea "<a name=\"~d_~d\" /><h2>Month ~2,'0d</h2>" (car d) (second d) (second d))
+           (format strea "<h3>Day ~2,'0d</h3>" (third d))
+           (format sidebar "<b><a href=\"#~d\">Year ~2,'0d</a></b>" (car d) (car d))
+           (format sidebar "<a href=\"#~d_~d\">Month ~2,'0d</a>" (car d) (second d) (second d))))
+    
+        ((eql level 2) ; change of month
+         (progn
+           (format strea "<a name=\"~d_~d\" /><h2>Month ~2,'0d</h2>" (car d) (second d) (second d))
+           (format strea "<h3>Day ~2,'0d</h3>" (third d))
+           (format sidebar "<a href=\"#~d_~d\">Month ~2,'0d</a>" (car d) (second d) (second d))))
+        
+        ((eql level 3) ; change of day
+         (format strea "<h3>Day ~2,'0d</h3>" (third d)))))
+
+
+(let ((mydate '(3000 1 1)))
+  (defun generate-section (elem strea sidebar)
+    (let* ((dt (multiple-value-list (decode-universal-time (car elem))))
+           (ddate (list (sixth dt) (fifth dt) (fourth dt))))
+      (cond ((< (car ddate) (car mydate))
+             (progn
+               (setf mydate ddate)
+               (format-date mydate 1 strea sidebar)))
+            ((and (eql (car ddate) (car mydate))
+                  (< (second ddate) (second mydate)))
+             (progn
+               (setf mydate ddate)
+               (format-date mydate 2 strea sidebar)))
+            ((and (eql (car ddate) (car mydate))
+                  (eql (second ddate) (second mydate))
+                  (< (third ddate) (third mydate)))
+             (progn
+               (setf mydate ddate)
+               (format-date mydate 3 strea sidebar)))))))
+
 
 (defun format-header (strea)
   (format strea
@@ -77,12 +118,13 @@
 <link rel=\"stylesheet\" type=\"text/css\" href=\"styles.css\"> \
 </head> \
 <body> \
-<div class=\"sidenav\"> \
-<a href=\"#\">Link</a> \
-<a href=\"#\">Link</a> \
-<a href=\"#\">Link</a> \
-</div> \
 <div class=\"content\">"))
+
+(defun format-sidebar (strea)
+  (format strea
+          "</div> \
+<div class=\"sidenav\">"))
+
 
 (defun format-footer (strea)
   (format strea
@@ -91,12 +133,17 @@
 </html>"))
 
 (defun generate-page (dir)
-  (let ((sorted-list (sort (build-map (find-files dir)) #'list>)))
-    (with-open-file (strea "index.html" :direction :output
+  (let ((sorted-list (sort (build-map (find-files dir)) #'list>))
+        (sidebar (make-string-output-stream)))
+    (with-open-file (strea "index.html"
+                           :direction :output
                            :if-exists :supersede)
                     (format-header strea)
                     (dolist (elem sorted-list)
+                      (generate-section elem strea sidebar)
                       (format-elem elem strea))
+                    (format-sidebar strea)
+                    (format strea (get-output-stream-string sidebar))
                     (format-footer strea))))
 
 
