@@ -1,6 +1,7 @@
 ;=============================HEADER====================================
-; champ3.lisp "Timeline explorer" v3
+; champ4.lisp "Timeline explorer" v4
 ; Copyleft Olivier Rey 2019-2020
+; This version aims at providing a more optimized version than the v3.
 ;=======================================================================
 
 (defparameter LAST-DIR-CHAR "/")
@@ -53,6 +54,20 @@
                   (file-write-date s)))
 
 
+(defun find-files-bis (dir)
+  "The objective is to use a list of dotted pairs"
+  (if (not (check-folder dir))
+      (print "Not a folder")
+    (let ((acc nil))
+      (labels ((find-files1 (acc1 dir1)
+                            (dolist (f (files-in-dir dir1))
+                              (setf acc1 (append acc1 (list (cons (get-file-seconds f) f)))))
+                            (dolist (d (dirs-in-dir dir1))
+                              (setf acc1 (find-files1 acc1 d)))
+                            acc1))
+              (setf acc (find-files1 acc dir))))))
+  
+
 (defun build-map (acc)
   "Create the customized hashmap. As several files can have the same timestamp,
    it is not possible to use a struct with primary key."
@@ -63,6 +78,7 @@
 
 
 (defun list> (a b)
+  "Comparison works for pairs and dotted pairs"
   (if (> (car a) (car b)) T nil))
 
 
@@ -78,6 +94,21 @@
             (first dt)
             (cadr elem)
             (concatenate 'string (pathname-name pn) "." (pathname-type pn)))))
+
+
+(defun format-elem-bis (elem strea)
+  (let ((dt (multiple-value-list (decode-universal-time (car elem))))
+        (pn (car (directory (cdr elem)))))
+    (format strea "<p>~2,'0d-~2,'0d-~2,'0d - ~2,'0d:~2,'0d:~2,'0d | <a href=\"~A\" target=\"_new\">~A</a></p>"
+            (sixth dt)
+            (fifth dt)
+            (fourth dt)
+            (third dt)
+            (second dt)
+            (first dt)
+            (cdr elem)
+            (concatenate 'string (pathname-name pn) "." (pathname-type pn)))))
+
 
 
 (defun format-date (d level strea sidebar)
@@ -155,7 +186,29 @@
                     (format-footer strea))))
 
 
+(defun generate-page-bis (dir)
+  (let ((sorted-list (sort (find-files-bis dir) #'list>))
+        (sidebar (make-string-output-stream)))
+    (with-open-file (strea "index.html"
+                           :direction :output
+                           :if-exists :supersede)
+                    (format-header strea)
+                    (dolist (elem sorted-list)
+                      (generate-section elem strea sidebar)
+                      (format-elem-bis elem strea)
+                      (princ "+"))
+                    (format-sidebar strea)
+                    (format strea (get-output-stream-string sidebar))
+                    (format-footer strea))))
+
 ;======================================Test programs
+
+(let ((counter 0))
+  (defun start-counting ()
+    (setf counter (get-universal-time)))
+  (defun stop-counting ()
+    (- (get-universal-time) counter)))
+
 
 (defun test1 ()
   (find-files "/home/olivier/Documents/github/"))
@@ -175,7 +228,16 @@
   (format-footer T))
 
 (defun test6 ()
-  (generate-page "/home/olivier/Documents/OREYBOX/Biblio/"))
+  (start-counting)
+  (generate-page "/home/olivier/Documents/OREYBOX/oreyboulot/")
+  (format t "Processing done in ~d seconds" (stop-counting)))
+
+
+(defun test7 ()
+  (start-counting)
+  (generate-page-bis "/home/olivier/Documents/OREYBOX/oreyboulot/")
+  (format t "Processing done in ~d seconds" (stop-counting)))
+
 
 (defun test-suite ()
   (test1)
@@ -183,4 +245,6 @@
   (test3)
   (test4)
   (test5)
-  (test6))
+  (test6)
+  (test7))
+
