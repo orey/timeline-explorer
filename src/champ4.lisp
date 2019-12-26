@@ -180,7 +180,8 @@
                     (dolist (elem sorted-list)
                       (generate-section elem strea sidebar)
                       (format-elem elem strea)
-                      (princ "+"))
+                                        ;(princ "+")
+                      )
                     (format-sidebar strea)
                     (format strea (get-output-stream-string sidebar))
                     (format-footer strea))))
@@ -196,7 +197,8 @@
                     (dolist (elem sorted-list)
                       (generate-section elem strea sidebar)
                       (format-elem-bis elem strea)
-                      (princ "+"))
+                                        ;(princ "+")
+                      )
                     (format-sidebar strea)
                     (format strea (get-output-stream-string sidebar))
                     (format-footer strea))))
@@ -229,13 +231,13 @@
 
 (defun test6 ()
   (start-counting)
-  (generate-page "/home/olivier/Documents/OREYBOX/oreyboulot/")
+  (generate-page "/home/olivier/MEGA/")
   (format t "Processing done in ~d seconds" (stop-counting)))
 
 
 (defun test7 ()
   (start-counting)
-  (generate-page-bis "/home/olivier/Documents/OREYBOX/oreyboulot/")
+  (generate-page-bis "/home/olivier/MEGA/")
   (format t "Processing done in ~d seconds" (stop-counting)))
 
 
