@@ -4,8 +4,25 @@
 ; This version aims at providing a more optimized version than the v3.
 ;=======================================================================
 
+(defpackage "CHAMP"
+            (:use "COMMON-LISP")
+            (:nicknames "CHAMP")
+            (:export "MAIN" "USAGE"))
+
+(in-package champ)
+
+
 (defparameter LAST-DIR-CHAR "/")
 (defparameter PATTERN       "*.*")
+
+
+(let ((myverbose nil))
+  (defun setverbose ()
+    (setf myverbose T))
+  (defun unsetverbose ()
+    (setf myverbose nil))
+  (defun getverbose ()
+    myverbose))
 
 
 (defun last-char (str)
@@ -24,6 +41,18 @@
   (if (not (probe-file dir)) NIL
     (folder-p (namestring (car (directory dir))))))
 
+(defun get-good-folder-name (dir)
+  (if (not (probe-file dir)) NIL
+    (namestring (car (directory dir)))))
+
+(defun test-dir ()
+  (let ((dirs (list "/home/olivier" "/home/johnny" "/home/olivier/Documents/")))
+        (dolist (i dirs)
+          (let ((temp (get-good-folder-name i)))
+            (if (not temp)
+                (print "Not a directory")
+              (print temp))))))
+
 
 (defun files-in-dir (dir)
   "dir is a string."
@@ -37,15 +66,14 @@
 
 (defun find-files (dir)
   "Main recursive loop to find files"
-  (if (not (check-folder dir))
-      (print "Not a folder")
-    (let ((acc nil))
-      (labels ((find-files1 (acc1 dir1)
-                            (setf acc1 (concatenate 'list acc1 (files-in-dir dir1)))
-                            (dolist (d (dirs-in-dir dir1))
-                              (setf acc1 (find-files1 acc1 d)))
-                            acc1))
-              (setf acc (find-files1 acc dir))))))
+  (let ((acc nil))
+    (if (getverbose) (progn (format t "Before recursive loop~%") (timecount)))
+    (labels ((find-files1 (acc1 dir1)
+                          (setf acc1 (concatenate 'list acc1 (files-in-dir dir1)))
+                          (dolist (d (dirs-in-dir dir1))
+                            (setf acc1 (find-files1 acc1 d)))
+                          acc1))
+            (setf acc (find-files1 acc dir)))))
 
 
 (defun get-file-seconds (f)
@@ -53,20 +81,6 @@
   (with-open-file (s f)
                   (file-write-date s)))
 
-
-(defun find-files-bis (dir)
-  "The objective is to use a list of dotted pairs"
-  (if (not (check-folder dir))
-      (print "Not a folder")
-    (let ((acc nil))
-      (labels ((find-files1 (acc1 dir1)
-                            (dolist (f (files-in-dir dir1))
-                              (setf acc1 (append acc1 (list (cons (get-file-seconds f) f)))))
-                            (dolist (d (dirs-in-dir dir1))
-                              (setf acc1 (find-files1 acc1 d)))
-                            acc1))
-              (setf acc (find-files1 acc dir))))))
-  
 
 (defun build-map (acc)
   "Create the customized hashmap. As several files can have the same timestamp,
@@ -78,7 +92,6 @@
 
 
 (defun list> (a b)
-  "Comparison works for pairs and dotted pairs"
   (if (> (car a) (car b)) T nil))
 
 
@@ -94,21 +107,6 @@
             (first dt)
             (cadr elem)
             (concatenate 'string (pathname-name pn) "." (pathname-type pn)))))
-
-
-(defun format-elem-bis (elem strea)
-  (let ((dt (multiple-value-list (decode-universal-time (car elem))))
-        (pn (car (directory (cdr elem)))))
-    (format strea "<p>~2,'0d-~2,'0d-~2,'0d - ~2,'0d:~2,'0d:~2,'0d | <a href=\"~A\" target=\"_new\">~A</a></p>"
-            (sixth dt)
-            (fifth dt)
-            (fourth dt)
-            (third dt)
-            (second dt)
-            (first dt)
-            (cdr elem)
-            (concatenate 'string (pathname-name pn) "." (pathname-type pn)))))
-
 
 
 (defun format-date (d level strea sidebar)
@@ -170,83 +168,59 @@
   (format strea "</div></body></html>"))
 
 
-(defun generate-page (dir)
+(defun generate-page (dir output)
   (let ((sorted-list (sort (build-map (find-files dir)) #'list>))
         (sidebar (make-string-output-stream)))
-    (with-open-file (strea "index.html"
+    (if (getverbose)
+        (progn (format t "After sorting~%") (timecount)))
+    (with-open-file (strea output
                            :direction :output
                            :if-exists :supersede)
                     (format-header strea)
                     (dolist (elem sorted-list)
                       (generate-section elem strea sidebar)
-                      (format-elem elem strea)
-                                        ;(princ "+")
-                      )
+                      (format-elem elem strea))
                     (format-sidebar strea)
                     (format strea (get-output-stream-string sidebar))
                     (format-footer strea))))
 
 
-(defun generate-page-bis (dir)
-  (let ((sorted-list (sort (find-files-bis dir) #'list>))
-        (sidebar (make-string-output-stream)))
-    (with-open-file (strea "index.html"
-                           :direction :output
-                           :if-exists :supersede)
-                    (format-header strea)
-                    (dolist (elem sorted-list)
-                      (generate-section elem strea sidebar)
-                      (format-elem-bis elem strea)
-                                        ;(princ "+")
-                      )
-                    (format-sidebar strea)
-                    (format strea (get-output-stream-string sidebar))
-                    (format-footer strea))))
-
-;======================================Test programs
-
-(let ((counter 0))
-  (defun start-counting ()
-    (setf counter (get-universal-time)))
-  (defun stop-counting ()
-    (- (get-universal-time) counter)))
+(let ((globalcounter 0)
+      (intermediatecounter 0))
+  (defun start-timecount ()
+    (setf globalcounter (get-universal-time))
+    (setf intermediatecounter (get-universal-time)))
+  (defun timecount ()
+    (let* ((temp (get-universal-time))
+           (delta (- temp intermediatecounter)))
+      (if (getverbose) (format t "Intermediate time spent: ~d seconds~%" delta))
+      (setf intermediatecounter temp)
+      delta))
+  (defun stop-timecount ()
+    (- (get-universal-time) globalcounter)))
+      
 
 
-(defun test1 ()
-  (find-files "/home/olivier/Documents/github/"))
+(defun usage ()
+  (format t "---~%Timeline Explorer v4 usage:~%")
+  (format t " * (champ:main :dir \"/path/to/wherever\") <- Generated file will be \"index.html\"~%")
+  (format t " * (champ:main :dir \"/path/to/wherever\ :output \"my-index.html\")~%---~%")
+  (format t "Available commands in package: (champ:usage), (champ:main :dir XXX)~%---~%"))
 
-(defun test2 ()
-  (find-files "/home/olivier/Documents/bloub/"))
-
-(defun test3 ()
-  (get-file-seconds "/home/olivier/Documents/github/toto.txt"))
-
-(defun test4 ()
-  (build-map (find-files "/home/olivier/Documents/github/")))
-
-(defun test5 ()
-  (format-header T)
-  (print "------------------")
-  (format-footer T))
-
-(defun test6 ()
-  (start-counting)
-  (generate-page "/home/olivier/MEGA/")
-  (format t "Processing done in ~d seconds" (stop-counting)))
+; Executed when package is loaded
+(usage)
 
 
-(defun test7 ()
-  (start-counting)
-  (generate-page-bis "/home/olivier/MEGA/")
-  (format t "Processing done in ~d seconds" (stop-counting)))
-
-
-(defun test-suite ()
-  (test1)
-  (test2)
-  (test3)
-  (test4)
-  (test5)
-  (test6)
-  (test7))
+(defun main (&key dir (output "index.html") (verbose nil))
+  (let ((truedir (get-good-folder-name dir)))
+    (if (not truedir)
+        (progn
+          (format t "Error: ~A is not a directory.~%" dir)
+          (usage)
+          (abort))
+      (progn
+        (if verbose (setverbose))
+        (start-timecount)
+        (generate-page truedir output)
+        (format t "~A generated in ~d seconds~%" output (stop-timecount))))))
 
