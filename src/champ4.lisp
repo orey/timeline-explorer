@@ -25,6 +25,21 @@
     myverbose))
 
 
+(let ((globalcounter 0)
+      (intermediatecounter 0))
+  (defun start-timecount ()
+    (setf globalcounter (get-universal-time))
+    (setf intermediatecounter (get-universal-time)))
+  (defun timecount ()
+    (let* ((temp (get-universal-time))
+           (delta (- temp intermediatecounter)))
+      (if (getverbose) (format t "Intermediate time spent: ~d seconds~%" delta))
+      (setf intermediatecounter temp)
+      delta))
+  (defun stop-timecount ()
+    (- (get-universal-time) globalcounter)))
+      
+
 (defun last-char (str)
   "Get the last char of a string."
   (subseq str (- (length str) 1)))
@@ -185,21 +200,6 @@
                     (format-footer strea))))
 
 
-(let ((globalcounter 0)
-      (intermediatecounter 0))
-  (defun start-timecount ()
-    (setf globalcounter (get-universal-time))
-    (setf intermediatecounter (get-universal-time)))
-  (defun timecount ()
-    (let* ((temp (get-universal-time))
-           (delta (- temp intermediatecounter)))
-      (if (getverbose) (format t "Intermediate time spent: ~d seconds~%" delta))
-      (setf intermediatecounter temp)
-      delta))
-  (defun stop-timecount ()
-    (- (get-universal-time) globalcounter)))
-      
-
 
 (defun usage ()
   (format t "---~%Timeline Explorer v4 usage:~%")
@@ -207,20 +207,26 @@
   (format t " * (champ:main :dir \"/path/to/wherever\ :output \"my-index.html\")~%---~%")
   (format t "Available commands in package: (champ:usage), (champ:main :dir XXX)~%---~%"))
 
-; Executed when package is loaded
-(usage)
+
+(defun not-folder-error (dir)
+  (format t "Error: ~A is not a directory.~%" dir)
+  (usage)
+  (abort))
 
 
-(defun main (&key dir (output "index.html") (verbose nil))
+(defun main (&key dir (output "index.html") (outputdir ".") (verbose nil))
+  (if (not (check-folder outputdir))
+      (not-folder-error outputdir))
   (let ((truedir (get-good-folder-name dir)))
     (if (not truedir)
-        (progn
-          (format t "Error: ~A is not a directory.~%" dir)
-          (usage)
-          (abort))
+        (not-folder-error outputdir)
       (progn
         (if verbose (setverbose))
         (start-timecount)
         (generate-page truedir output)
         (format t "~A generated in ~d seconds~%" output (stop-timecount))))))
+
+
+; Executed when package is loaded
+(usage)
 
