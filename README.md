@@ -12,11 +12,18 @@ Updated: December 28 2019
 
 Just load the file and follow instructions.
 
+## Compatibility notes
+
+Tested under sbcl/Debian.
+
+`champ2.lisp` was portable Linux/Windows but `champ4.lisp` was not tested under Windows.
+
 ## To do
 
   * Compare sorting performance of `vector` compared to `list`.
   * Use macros to generate html in an easier way.
-  * Optimize
+  * Optimize.
+  * Port for Windows.
   
 ## Implementation notes
 
