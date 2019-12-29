@@ -14,7 +14,7 @@ Just load the file and follow instructions.
 
 ## Compatibility notes
 
-Tested under sbcl/Debian.
+Tested under sbcl/debian and cmucl/debian.
 
 `champ2.lisp` was portable Linux/Windows but `champ4.lisp` was not tested under Windows.
 

@@ -56,17 +56,10 @@
   (if (not (probe-file dir)) NIL
     (folder-p (namestring (car (directory dir))))))
 
+
 (defun get-good-folder-name (dir)
   (if (not (probe-file dir)) NIL
     (namestring (car (directory dir)))))
-
-(defun test-dir ()
-  (let ((dirs (list "/home/olivier" "/home/johnny" "/home/olivier/Documents/")))
-        (dolist (i dirs)
-          (let ((temp (get-good-folder-name i)))
-            (if (not temp)
-                (print "Not a directory")
-              (print temp))))))
 
 
 (defun files-in-dir (dir)
@@ -141,25 +134,35 @@
          (format strea "<h3>Day ~2,'0d</h3>" (third d)))))
 
 
-(let ((mydate '(3000 1 1)))
+(let ((mydate '(3000 1 1))
+      (mystart T))
   (defun generate-section (elem strea sidebar)
     (let* ((dt (multiple-value-list (decode-universal-time (car elem))))
            (ddate (list (sixth dt) (fifth dt) (fourth dt))))
       (cond ((< (car ddate) (car mydate))
              (progn
                (setf mydate ddate)
+               (setf mystart nil)
                (format-date mydate 1 strea sidebar)))
             ((and (eql (car ddate) (car mydate))
                   (< (second ddate) (second mydate)))
              (progn
                (setf mydate ddate)
+               (setf mystart nil)
                (format-date mydate 2 strea sidebar)))
             ((and (eql (car ddate) (car mydate))
                   (eql (second ddate) (second mydate))
                   (< (third ddate) (third mydate)))
              (progn
                (setf mydate ddate)
-               (format-date mydate 3 strea sidebar)))))))
+               (setf mystart nil)
+               (format-date mydate 3 strea sidebar)))
+            (t
+             (if mystart
+                 (progn
+                   (print "This should not happen. dt then ddate")
+                   (print dt)
+                   (print ddate))))))))
 
 
 (defun format-header (strea)
@@ -214,12 +217,8 @@
   (abort))
 
 
-(defun main (&key dir (output "index.html") (outputdir ".") (verbose nil))
-  (if (not (check-folder outputdir))
-      (not-folder-error outputdir))
+(defun main (&key dir (output "index.html") (verbose nil))
   (let ((truedir (get-good-folder-name dir)))
-    (if (not truedir)
-        (not-folder-error outputdir)
       (progn
         (if verbose (setverbose))
         (start-timecount)
