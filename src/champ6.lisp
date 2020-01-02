@@ -195,13 +195,12 @@
           "<!DOCTYPE html><html lang=\"en\"> \
 <head> \
 <title>Champollion Explorer</title> \
-<meta charset=\"utf-8\"> \
-<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> \
-<link rel=\"stylesheet\" type=\"text/css\" href=\"styles.css\"> \
+<meta charset=\"utf-8\" /> \
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" /> \
+<link rel=\"stylesheet\" type=\"text/css\" href=\"styles.css\" /> \
 </head> \
 <body> \
 <div class=\"content\">"))
-
 
 (defun format-sidebar (strea)
   (format strea "</div><div class=\"sidenav\">"))
