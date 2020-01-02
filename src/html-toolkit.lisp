@@ -1,12 +1,12 @@
 ; Utilities coming from Paul Graham
 
-(defmacro as (tag content)
+(defmacro simple-tag (tag content)
   ; This macro is supposed to work with an overload of the
   ; default printing context. Otherwise, it prints to the console.
   `(format t "~&<~(~A~)>~A</~(~A~)>~%" ',tag ,content ',tag))
 
 
-(defmacro with (tag &rest body)
+(defmacro with-tag (tag &rest body)
   `(progn
      (format t "~&<~(~A~)>~%" ',tag)
      ,@body
@@ -19,11 +19,14 @@
      ,@body
      (format t "~&</div>~%")))
 
+
 (defun html-file (base)
   (format nil "~(~A~).html" base))
 
+
 (defun format-header ()
   (format t "<!DOCTYPE html><html lang=\"en\">~%"))
+
 
 (defun format-meta (style)
   (format t "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />~%")
@@ -49,16 +52,38 @@
                     :direction :output
                     :if-exists :supersede)
                    (format-header)
-                   (with head
-                         (as title ,tit)
+                   (with-tag head
+                         (simple-tag title ,tit)
                          (format-meta ,style))
-                   (with body
+                   (with-tag body
                          ,@body)))
 
 (defun test1 ()
   (page 'toto "Champ oli" "style"
         (with-div "content"
                   (princ "rheu"))))
+
+(defstruct elem
+  timestamp fileloc)
+
+
+(defun format-timestamp (ts)
+  (format t "~2,'0d-~2,'0d-~2,'0d - ~2,'0d:~2,'0d:~2,'0d"
+            (sixth ts)
+            (fifth ts)
+            (fourth ts)
+            (third ts)
+            (second ts)
+            (first ts)))
+
+
+(defun link-tag (name fileloc)
+  (format t "~&<a href=\"~A\" target=\"_new\">~A</a>~%" fileloc name))
+
+
+
+
+
 
 
 
