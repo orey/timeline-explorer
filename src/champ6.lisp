@@ -4,12 +4,12 @@
 ; This version provides a macro-based html toolkit
 ;=======================================================================
 
-(defpackage "CHAMP"
-            (:use "COMMON-LISP")
-            (:nicknames "CHAMP")
-            (:export "MAIN" "USAGE" "TAG1" "TAGN"))
+;(defpackage "CHAMP"
+;            (:use "COMMON-LISP")
+;            (:nicknames "CHAMP")
+;            (:export "MAIN" "USAGE" "TAG1" "TAGN"))
 
-(in-package champ)
+;(in-package champ)
 
 
 (defparameter LAST-DIR-CHAR "/")
@@ -100,31 +100,35 @@
 
 
 (defun list> (a b)
+  "Could be used as a lambda function"
   (if (> (car a) (car b)) T nil))
 
 ;========================== html toolkit
 
-;--- struct for complex tag
-(defstuct ctag
-  name attributes)
+(load "html-toolkit.lisp")
 
+;========================== html toolkit
 
-(defmacro tag1 (str tag content)
-  ; Generate tag on one line
-  `(format ,str "~&<~(~A~)>~A</~(~A~)>~%" ',tag ,content ',tag))
+(defun format-elem2 (elem)
+  (let ((pn (pathname (cadr elem))))
+    (with-tag p
+              (format-timestamp (car elem))
+              (princ " | ")
+              (link-tag
+               (concatenate 'string (pathname-name pn) "." (pathname-type pn))
+               (cadr elem)))))
 
-
-(defmacro tagn (str tag &rest body)
-  ; Generate tag on several lines for readability
-  `(format ,str "~&<~(~A~)>~%~&~A~%~&</~(~A~)>~%" ',tag ,@body ',tag))
-
-
-(defmacro complextag (str tag)
-  ; Generate tag on one line
-  `(format ,str "<~(~A~)>~A</~(~A~)>" ',tag ,content ',tag))
-
-
-
+(defun test12 ()
+        (let* ((f "/home/olivier/.emacs")
+               (ts (get-file-seconds f))
+               (elem (list ts f)))
+          (print f)
+          (print ts)
+          (print elem)
+          (format-elem2 elem)))
+                   
+        
+        
 
 
 

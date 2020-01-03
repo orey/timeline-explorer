@@ -1,4 +1,4 @@
-; Utilities coming from Paul Graham
+; HTML utilities inspired by Paul Graham
 
 (defmacro simple-tag (tag content)
   ; This macro is supposed to work with an overload of the
@@ -24,7 +24,7 @@
   (format nil "~(~A~).html" base))
 
 
-(defun format-header ()
+(defun format-html-header ()
   (format t "<!DOCTYPE html><html lang=\"en\">~%"))
 
 
@@ -51,7 +51,7 @@
                     (html-file ,name)
                     :direction :output
                     :if-exists :supersede)
-                   (format-header)
+                   (format-html-header)
                    (with-tag head
                          (simple-tag title ,tit)
                          (format-meta ,style))
